@@ -11,14 +11,19 @@ const botDir: string = process.env.MAKEFUN_BOT_DIR ?? "/bot";
 const outputDir: string = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
 
 async function run(): Promise<void> {
-  await mkdir(outputDir, { recursive: true });
   const from = join(botDir, "POST.json");
   const to = join(outputDir, "POST.json");
-  await copyFile(from, to);
+  try {
+    await mkdir(outputDir, { recursive: true });
+    await copyFile(from, to);
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(
+      `Could not deliver POST.json from "${from}" to "${to}": ${detail}. ` +
+        `Check that POST.json exists in the bot directory and that the output directory is writable.`,
+    );
+    process.exit(1);
+  }
 }
 
-run().catch((err: unknown) => {
-  const detail = err instanceof Error ? err.message : String(err);
-  console.error(`Failed to copy POST.json: ${detail}`);
-  process.exit(1);
-});
+await run();
